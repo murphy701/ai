@@ -1,0 +1,8 @@
+1. 데이터 전처리
+vgg_training.mlx 참고
+
+2.신경망 구성절차
+vgg16 -relu, softmax
+
+3.신경망 학습과정 전략
+dropout, 모멘텀, mini batch
