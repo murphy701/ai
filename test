@@ -2,7 +2,7 @@
 vgg_training.mlx 참고
 
 2.신경망 구성절차
-vgg16 -relu, softmax
+vgg19 -relu, softmax
 
 3.신경망 학습과정 전략
 dropout, stride, mini batch, validation set
