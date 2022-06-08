@@ -1,2 +1,3 @@
 adam optimizer가 sgdm보다 성능이 좋음
 dropoutlayer 추가 예정
+adam 사용시 250회 훈련해도 충분함
