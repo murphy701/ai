@@ -1,3 +1,24 @@
 adam optimizer가 sgdm보다 성능이 좋음
-dropoutlayer 추가 예정
 adam 사용시 250회 훈련해도 충분함
+
+학습 많이하면 overfitting 생김
+countEachLabel을 빼고 하나의 폴더에 사진을 넣을 시 참고
+class1 = imageDatastore({'cat1/random_folder/','cat1/'});
+class1.Labels = repelem("cat1",numImages);
+imdsFinal = imageDatastore([class1.Files; class2.Files]);
+imdsFinal.Labels = [class1.Labels; class2.Labels]);
+
+imds = imageDatastore(fullfile(matlabroot, 'toolbox', 'matlab', {'demos','imagesci'}),...
+'LabelSource', 'foldernames', 'FileExtensions', {'.jpg', '.png', '.tif'})
+imds = 
+
+  ImageDatastore with properties:
+
+      Files: {
+             ' ...\matlab\toolbox\matlab\demos\cloudCombined.jpg';
+             ' ...\matlab\toolbox\matlab\demos\example.tif';
+             ' ...\matlab\toolbox\matlab\demos\landOcean.jpg'
+              ... and 5 more
+             }
+     Labels: [demos; demos; demos ... and 5 more categorical]
+    ReadFcn: @readDatastoreImage
