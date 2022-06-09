@@ -22,3 +22,8 @@ imds =
              }
      Labels: [demos; demos; demos ... and 5 more categorical]
     ReadFcn: @readDatastoreImage
+
+---------------------------------------
+tif파일만 읽기
+imds = imageDatastore(fullfile(matlabroot,"toolbox","matlab"),...
+"IncludeSubfolders",true,"FileExtensions",".tif","LabelSource","foldernames")
