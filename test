@@ -5,4 +5,4 @@ vgg_training.mlx 참고
 vgg19 -relu, softmax
 
 3.신경망 학습과정 전략
-dropout, stride, mini batch, validation set
+dropout, stride, mini batch, validation set(의미가 있는 기능인지 모르겠음)
