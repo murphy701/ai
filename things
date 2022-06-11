@@ -27,3 +27,6 @@ imds =
 tif파일만 읽기
 imds = imageDatastore(fullfile(matlabroot,"toolbox","matlab"),...
 "IncludeSubfolders",true,"FileExtensions",".tif","LabelSource","foldernames")
+-----------------------------------------
+https://kr.mathworks.com/help/matlab/ref/startswith.html
+https://kr.mathworks.com/help/matlab/ref/mfilename.html
