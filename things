@@ -31,3 +31,4 @@ imds = imageDatastore(fullfile(matlabroot,"toolbox","matlab"),...
 https://kr.mathworks.com/help/matlab/ref/startswith.html
 https://kr.mathworks.com/help/matlab/ref/mfilename.html
 https://kr.mathworks.com/help/matlab/ref/count.html
+imds.Labels=repmat(a, size(imds.Labels, 1), 1)
