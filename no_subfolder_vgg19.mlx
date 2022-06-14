@@ -1,0 +1,159 @@
+clear all;
+close all;
+%서브 디렉토리 포함 학습 데이터 입력
+inputsize_row = 405;
+inputsize_col = 720;
+channel = 3;
+
+inputsize = [inputsize_row, inputsize_col];
+imagesize = [inputsize_row, inputsize_col, channel];
+imds = imageDatastore('C:\Users\1\all_in_one_trainning\', 'IncludeSubfolders' ,true, 'LabelSource', 'foldernames');
+%카테고리컬로 레이블을 만들고 배열을 인덱싱하여 imds.Lables를 변경
+a=categorical({'vignas'})
+b=categorical({'crasan'})
+c=categorical({'sobvig'})
+d=categorical({'soboro'})
+e=categorical({'muffin'})
+f=categorical({'goroke'})
+for i=1 : 102
+imds.Labels(i,1)=repmat(a, size(imds.Labels(i,1), 1), 1)
+end
+for i=103: 204
+imds.Labels(i,1)=repmat(b, size(imds.Labels(i,1), 1), 1)
+end
+for i=205: 306
+imds.Labels(i,1)=repmat(c, size(imds.Labels(i,1), 1), 1)
+end
+for i=307:408
+imds.Labels(i,1)=repmat(d, size(imds.Labels(i,1), 1), 1)
+end
+for i=409:510
+imds.Labels(i,1)=repmat(e, size(imds.Labels(i,1), 1), 1)
+end
+for i=511:612
+imds.Labels(i,1)=repmat(f, size(imds.Labels(i,1), 1), 1)
+end%size*1배열 반환
+imgs = readall(imds);
+
+%데이터 확인
+% training data
+imds.countEachLabel;
+no_sample = imds.countEachLabel.Count(1)*length(imds.countEachLabel.Label);
+res_imgs = zeros(inputsize_row, inputsize_col, channel, no_sample);
+
+for i=1 : no_sample
+    res_imgs(:, :, :, i) = imresize(imgs{i}, inputsize);
+end
+
+%훈련용 데이터 생성
+XTrain = res_imgs;
+YTrain = categorical(imds.Labels);
+no_Validation = round(no_sample*0.2);
+idx = randperm(size(XTrain, 4), no_Validation);
+XValidation = XTrain(:, :, :, idx);
+XTrain(:, :, :, idx) = [];
+YValidation = YTrain(idx);
+YTrain(idx)= [];
+
+%데이터 증대
+imageAugmentor = imageDataAugmenter('RandRotation', [-20, 20], 'RandXTranslation', [-3 3], 'RandYTranslation', [-3 3]);
+augimdsTrain = augmentedImageDatastore(imagesize, XTrain, YTrain, 'DataAugmentation', imageAugmentor);
+augimdsValidation = augmentedImageDatastore(imagesize, XValidation, YValidation, 'DataAugmentation', imageAugmentor);
+
+%신경망 구성
+layers = [
+    imageInputLayer([inputsize_row inputsize_col 3],"Name","data")
+    convolution2dLayer([11 11],96,"Name","conv1","BiasLearnRateFactor",2,"Stride",[4 4])
+    crossChannelNormalizationLayer(5,"Name","norm1","K",1)
+    maxPooling2dLayer([3 3],"Name","pool1","Stride",[2 2])
+    reluLayer("Name","relu1")
+    groupedConvolution2dLayer([5 5],128,2,"Name","conv2","BiasLearnRateFactor",2,"Padding",[2 2 2 2])
+    crossChannelNormalizationLayer(5,"Name","norm2","K",1)
+    maxPooling2dLayer([3 3],"Name","pool2","Stride",[2 2])
+    reluLayer("Name","relu2")
+    convolution2dLayer([3 3],384,"Name","conv3","BiasLearnRateFactor",2,"Padding",[1 1 1 1])
+    reluLayer("Name","relu3")
+    groupedConvolution2dLayer([3 3],192,2,"Name","conv4","BiasLearnRateFactor",2,"Padding",[1 1 1 1])
+    reluLayer("Name","relu4")
+    groupedConvolution2dLayer([3 3],128,2,"Name","conv5","BiasLearnRateFactor",2,"Padding",[1 1 1 1])
+    maxPooling2dLayer([3 3],"Name","pool5","Stride",[2 2])
+    reluLayer("Name","relu5")
+    fullyConnectedLayer(4096,"Name","fc6","BiasLearnRateFactor",2)
+    reluLayer("Name","relu6")
+    dropoutLayer(0.5,"Name","drop6")
+    fullyConnectedLayer(4096,"Name","fc7","BiasLearnRateFactor",2)
+    reluLayer("Name","relu7")
+    dropoutLayer(0.5,"Name","drop7")
+    fullyConnectedLayer(6,"Name","fc")
+    softmaxLayer("Name","prob")
+    classificationLayer("Name","classoutput")];
+%구성된 신경망 확인
+%plot(layerGraph(layers));
+%신경망 학습을 위한 옵션 설정
+options = trainingOptions('adam', ... %-mommentum 포함된 sgd / 'adam'(rmsprop+mommentum)과 learning rate 사용 고려
+    'MiniBatchSize' , 10, ...
+    'MaxEpochs', 15, ...
+    'Shuffle','every-epoch', ...
+    'InitialLearnRate', 1e-4, ...
+     'ValidationData',{XValidation YValidation}, ...
+    'ValidationFrequency', 10, ...
+    'Verbose',false, ...
+    'Plots','training-progress');%sgdm-finalvalidationaccuracy 95.6
+                                 %amdam-finalvalidationaccuracy 93.8
+
+%신경망 훈련
+[convnet, trainInfo] = trainNetwork(XTrain, YTrain, layers, options)
+
+
+save another_vgg19.mat convnet;
+save vgg19_info.mat trainInfo;
+analyzeNetwork(convnet);
+
+%Validation 데이터 평가
+load another_vgg19.mat
+YPred = classify(convnet, XValidation);
+accuracy = sum(YPred == YValidation)/numel(YValidation)
+%테스트 데이터 평가
+test_imds = imageDatastore('C:\Users\1\all_in_one_test\',  'IncludeSubfolders', true, 'LabelSource', 'foldernames');
+a=categorical({'vignas'})
+b=categorical({'crasan'})
+c=categorical({'sobvig'})
+d=categorical({'soboro'})
+e=categorical({'muffin'})
+f=categorical({'goroke'})
+for i=1 : 5
+test_imds.Labels(i,1)=repmat(a, size(test_imds.Labels(i,1), 1), 1)
+end
+for i=6: 10
+test_imds.Labels(i,1)=repmat(b, size(test_imds.Labels(i,1), 1), 1)
+end
+for i=11: 15
+test_imds.Labels(i,1)=repmat(c, size(test_imds.Labels(i,1), 1), 1)
+end
+for i=16:20
+test_imds.Labels(i,1)=repmat(d, size(test_imds.Labels(i,1), 1), 1)
+end
+for i=21:25
+test_imds.Labels(i,1)=repmat(e, size(test_imds.Labels(i,1), 1), 1)
+end
+for i=26:30
+test_imds.Labels(i,1)=repmat(f, size(test_imds.Labels(i,1), 1), 1)
+end
+test_imgs = readall(test_imds);
+
+%test data
+testsize_row = 720;
+testtsize_col = 1440;
+test_imds.countEachLabel;
+no_testsample = test_imds.countEachLabel.Count(1)*length(test_imds.countEachLabel.Label);
+res_testimgs = zeros(inputsize_row, inputsize_col, channel, no_testsample);
+
+for i=1 : no_testsample
+    res_testimgs(:, :, :, i) = imresize(test_imgs{i}, inputsize);
+end
+
+XTest = res_testimgs;
+YTest = categorical(test_imds.Labels);
+
+YPred_Test = classify(convnet, XTest);
+accuracy = sum(YPred_Test == YTest)/numel(YTest)
